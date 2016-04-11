@@ -35,8 +35,8 @@ public class FinalFrameReader {
     public FinalFrameReader() {
         nbOfReadFinalFramePackets = 0;
         nbOfDroppedFinalFramePackets = 0;
-        finalFrameHeader = new byte[8];
-        finalFrameFooter = new byte[4];
+        finalFrameHeader = new byte[FinalFrameConstants.FINAL_FRAME_HEADER_LENGTH];
+        finalFrameFooter = new byte[FinalFrameConstants.FINAL_FRAME_FOOTER_LENGTH];
         logger = LoggerFactory.getLogger("jlg.final-frame-api");
     }
 
@@ -52,7 +52,8 @@ public class FinalFrameReader {
             is.read(finalFrameHeader, 0, finalFrameHeader.length);
             int frameLength = getFrameLength();
             int availableBytes = is.available();
-            if (!isHeaderValid(frameLength, availableBytes)) {
+            //we need to add the 8 bytes from the header for the comparison
+            if (!isHeaderValid(frameLength, availableBytes + finalFrameHeader.length)) {
                 return null;
             }
             int finalFrameTime = getFrameTime();
@@ -69,7 +70,7 @@ public class FinalFrameReader {
             nbOfReadFinalFramePackets++;
             return finalFramePayload;
         } catch (IOException e) {
-            logger.error("(FinalFrameReader::read) Error while reading data fro stream. Final frame packet will be discarded.");
+            logger.error("(FinalFrameReader::read) Error while reading data from stream. Final frame packet will be discarded.");
             return null;
         }
     }
@@ -124,11 +125,13 @@ public class FinalFrameReader {
     private boolean isFooterValid() {
         for (int i = 0; i < finalFrameFooter.length; i++) {
             ///165 = A5 in hexadecimal. In final frame format, the footer is always A5A5A5A5 (A5 x 4 times)
-            if (Byte.toUnsignedInt(finalFrameFooter[i]) != 165) {
+            int unsignedValue = Byte.toUnsignedInt(finalFrameFooter[i]);
+            if (unsignedValue != 165) {
                 nbOfDroppedFinalFramePackets++;
                 nbOfDroppedFinalFramePacketsBecauseOfInvalidFooter++;
                 logger.warn("(FinalFrameReader::read) Dropped final frame packet because an invalid " +
-                        "character was found in the footer: " + Byte.toUnsignedInt(finalFrameFooter[i]));
+                        "character was found in the footer: " + unsignedValue + " (dec), " +
+                        Integer.toHexString(unsignedValue) + " (hex)");
 
                 return false;
             }
@@ -150,8 +153,8 @@ public class FinalFrameReader {
             nbOfDroppedFinalFramePackets++;
             nbOfDroppedFinalFramePacketsBecauseOfInvalidSize++;
             logger.warn("(FinalFrameReader::read) Dropped final frame packet because its size exceeds the remaining available stream. " +
-                    "Size of final frame packet is: " + frameLength + "." +
-                    "Size on stream is: " + availableBytes);
+                    "Size of final frame packet is: " + frameLength + " bytes. " +
+                    "Remaining size on stream is: " + availableBytes + " bytes");
             return false;
         }
         return true;

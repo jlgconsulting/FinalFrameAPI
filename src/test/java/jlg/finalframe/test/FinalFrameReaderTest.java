@@ -1,22 +1,33 @@
+/*
+* Created by dan-geabunea on 4/11/2016.
+* This code is the property of JLG Consulting. Please
+* check the license terms for this product to see under what
+* conditions you can use or modify this source code.
+*/
 package jlg.finalframe.test;
 
+import jlg.finalframe.FinalFrameConstants;
 import jlg.finalframe.FinalFrameReader;
-import org.junit.Assert;
 import org.junit.Test;
-import org.springframework.context.annotation.Description;
 
-import java.io.File;
 import java.io.InputStream;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 public class FinalFrameReaderTest {
 
+    /*
+    The goal of this test suite is to verify the correct reading of final frame messages/packets from a given file.
+    There are 3 tests to be executed:
+    - one with a correct final frame format, that should return the message payload
+    - one where the length from the final frame message header exceeds the file length, that should be discarded
+    - one where the footer of the final frame is not valid (a5 a5 a5 a5), that should be discarded.
+    The input data is read from the /resources folder. All the test files contain a single final frame packet.
+     */
+
     @Test
-    @Description(
-    "We read a final frame file with a single packet." +
-    "If thr dimension of the final frame (2 first bytes) is larger than the available" +
-    "length of the file, then the reader should return null.")
     public void when_final_frame_dimension_is_wrong_should_return_null() {
         //arrange
         InputStream is = TestHelper.getFileInputStreamFromResource("final_frame_wrong_dimension_sample_one_packet.ff");
@@ -29,4 +40,30 @@ public class FinalFrameReaderTest {
         assertNull(ffPayload);
     }
 
+    @Test
+    public void when_final_frame_has_wrong_footer_should_return_null() {
+        //arrange
+        InputStream is = TestHelper.getFileInputStreamFromResource("final_frame_wrong_footer_sample_one_packet.ff");
+        FinalFrameReader ffReader = new FinalFrameReader();
+
+        //act
+        byte[] ffPayload = ffReader.read(is);
+
+        //assert
+        assertNull(ffPayload);
+    }
+
+    @Test
+    public void when_message_is_correct_should_return_byte_array_with_payload(){
+        //arrange
+        InputStream is = TestHelper.getFileInputStreamFromResource("final_frame_correct_sample_one_packet.ff");
+        FinalFrameReader ffReader = new FinalFrameReader();
+
+        //act
+        byte[] ffPayload = ffReader.read(is);
+
+        //assert
+        assertNotNull(ffPayload);
+        assertEquals(70- FinalFrameConstants.FINAL_FRAME_WRAPPING_LENGTH, ffPayload.length);
+    }
 }
