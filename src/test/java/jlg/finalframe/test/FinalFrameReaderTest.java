@@ -12,18 +12,17 @@ import org.junit.Test;
 
 import java.io.InputStream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 public class FinalFrameReaderTest {
 
     /*
     The goal of this test suite is to verify the correct reading of final frame messages/packets from a given file.
-    There are 3 tests to be executed:
+    The tests to be executed:
     - one with a correct final frame format, that should return the message payload
     - one where the length from the final frame message header exceeds the file length, that should be discarded
     - one where the footer of the final frame is not valid (a5 a5 a5 a5), that should be discarded.
+    - two tests that check if the asterix category filtering works
     The input data is read from the /resources folder. All the test files contain a single final frame packet.
      */
 
@@ -38,6 +37,8 @@ public class FinalFrameReaderTest {
 
         //assert
         assertNull(ffPayload);
+        assertEquals(0, ffReader.getNbOfReadFinalFramePackets());
+        assertEquals(1, ffReader.getNbOfDroppedFinalFramePackets());
     }
 
     @Test
@@ -51,6 +52,8 @@ public class FinalFrameReaderTest {
 
         //assert
         assertNull(ffPayload);
+        assertEquals(0, ffReader.getNbOfReadFinalFramePackets());
+        assertEquals(1, ffReader.getNbOfDroppedFinalFramePackets());
     }
 
     @Test
@@ -65,5 +68,38 @@ public class FinalFrameReaderTest {
         //assert
         assertNotNull(ffPayload);
         assertEquals(70- FinalFrameConstants.FINAL_FRAME_WRAPPING_LENGTH, ffPayload.length);
+        assertEquals(1, ffReader.getNbOfReadFinalFramePackets());
+        assertEquals(0, ffReader.getNbOfDroppedFinalFramePackets());
+    }
+
+    @Test
+    public void when_message_is_in_allowed_categories_should_return_payload(){
+        //arrange
+        InputStream isCat62 = TestHelper.getFileInputStreamFromResource("final_frame_correct_sample_one_packet.ff");
+        FinalFrameReader ffReader = new FinalFrameReader();
+
+        //act
+        byte[] ffPayload = ffReader.read(isCat62,62);
+
+        //assert
+        assertNotNull(ffPayload);
+        assertEquals(70- FinalFrameConstants.FINAL_FRAME_WRAPPING_LENGTH, ffPayload.length);
+        assertEquals(1, ffReader.getNbOfReadFinalFramePackets());
+        assertEquals(0, ffReader.getNbOfDroppedFinalFramePackets());
+    }
+
+    @Test
+    public void when_message_is_in_not_allowed_categories_should_return_payload(){
+        //arrange
+        InputStream isCat62 = TestHelper.getFileInputStreamFromResource("final_frame_correct_sample_one_packet.ff");
+        FinalFrameReader ffReader = new FinalFrameReader();
+
+        //act
+        byte[] ffPayload = ffReader.read(isCat62,65);
+
+        //assert
+        assertNull(ffPayload);
+        assertEquals(1, ffReader.getNbOfReadFinalFramePackets());
+        assertEquals(0, ffReader.getNbOfDroppedFinalFramePackets());
     }
 }

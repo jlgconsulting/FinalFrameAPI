@@ -21,12 +21,13 @@ import java.io.InputStream;
  * payload => length of the frame - 12 (header + footer). The payload has Asterix messages
  * footer => 4 bytes
  *   each byte has a hex value of A5 (165 in decimal)
+ *
+ * For optimization, you can use a single reader to process large input streams. There is no need toc reate a new reader
+ * for each final frame message in the stream.
  */
 public class FinalFrameReader {
     private int nbOfReadFinalFramePackets;
     private int nbOfDroppedFinalFramePackets;
-    private int nbOfDroppedFinalFramePacketsBecauseOfInvalidSize;
-    private int nbOfDroppedFinalFramePacketsBecauseOfInvalidFooter;
     private Logger logger;
 
     private byte[] finalFrameHeader;
@@ -73,6 +74,32 @@ public class FinalFrameReader {
             logger.error("(FinalFrameReader::read) Error while reading data from stream. Final frame packet will be discarded.");
             return null;
         }
+    }
+
+    /**
+     * Read the input stream and extract payload from final frame only if the asterix message within
+     * is included in the allowed categories
+     * @param is the input stream containing the final frame packet
+     * @param categories allowed asterix categories
+     * @return the payload of the final frame packet or NULL if the data is not valid final frame or if the asterix message
+     * is not included in the given categories
+     */
+    public byte[] read(InputStream is, int... categories){
+        if(categories.length == 0){
+            return read(is);
+        }
+
+        byte[] asterixPayload = read(is);
+
+        int messageCategory = Byte.toUnsignedInt(asterixPayload[0]);
+
+        for (int i=0;i<categories.length;i++){
+            if(categories[i] == messageCategory){
+                return asterixPayload;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -128,7 +155,6 @@ public class FinalFrameReader {
             int unsignedValue = Byte.toUnsignedInt(finalFrameFooter[i]);
             if (unsignedValue != 165) {
                 nbOfDroppedFinalFramePackets++;
-                nbOfDroppedFinalFramePacketsBecauseOfInvalidFooter++;
                 logger.warn("(FinalFrameReader::read) Dropped final frame packet because an invalid " +
                         "character was found in the footer: " + unsignedValue + " (dec), " +
                         Integer.toHexString(unsignedValue) + " (hex)");
@@ -151,7 +177,6 @@ public class FinalFrameReader {
         if (availableBytes < frameLength) {
             //the packet size is larger than the available stream
             nbOfDroppedFinalFramePackets++;
-            nbOfDroppedFinalFramePacketsBecauseOfInvalidSize++;
             logger.warn("(FinalFrameReader::read) Dropped final frame packet because its size exceeds the remaining available stream. " +
                     "Size of final frame packet is: " + frameLength + " bytes. " +
                     "Remaining size on stream is: " + availableBytes + " bytes");
