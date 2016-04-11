@@ -11,4 +11,5 @@ public class FinalFrameConstants {
     public static final int FINAL_FRAME_FOOTER_LENGTH = 4;
     //8 bytes from header + 4 bytes from footer
     public static final int FINAL_FRAME_WRAPPING_LENGTH = 12;
+    public static final int FINAL_FRAME_FOOTER_VALUE_BASE10 = 165;
 }

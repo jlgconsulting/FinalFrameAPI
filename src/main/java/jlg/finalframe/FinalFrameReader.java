@@ -17,7 +17,7 @@ import java.io.InputStream;
  * header => 8 bytes
  *   bytes 0,1 give the length of the frame
  *   bytes 2,3,4 are unused
- *   bytes 5,6,7 give the time
+ *   bytes 5,6,7 give the time expressed in hundredths of a second (100 units make up a second)
  * payload => length of the frame - 12 (header + footer). The payload has Asterix messages
  * footer => 4 bytes
  *   each byte has a hex value of A5 (165 in decimal)
