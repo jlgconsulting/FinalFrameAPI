@@ -10,6 +10,7 @@ import jlg.finalframe.FinalFrameConstants;
 import jlg.finalframe.FinalFrameReader;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import static org.junit.Assert.*;
@@ -27,79 +28,84 @@ public class FinalFrameReaderTest {
      */
 
     @Test
-    public void when_final_frame_dimension_is_wrong_should_return_null() {
-        //arrange
-        InputStream is = TestHelper.getFileInputStreamFromResource("final_frame_wrong_dimension_sample_one_packet.ff");
-        FinalFrameReader ffReader = new FinalFrameReader();
+    public void when_final_frame_dimension_is_wrong_should_return_null() throws IOException {
+        try(InputStream is = TestHelper.getFileInputStreamFromResource("final_frame_wrong_dimension_sample_one_packet.ff")) {
+            //arrange
+            FinalFrameReader ffReader = new FinalFrameReader();
 
-        //act
-        byte[] ffPayload = ffReader.read(is);
+            //act
+            byte[] ffPayload = ffReader.read(is);
 
-        //assert
-        assertNull(ffPayload);
-        assertEquals(0, ffReader.getNbOfReadFinalFramePackets());
-        assertEquals(1, ffReader.getNbOfDroppedFinalFramePackets());
+            //assert
+            assertNull(ffPayload);
+            assertEquals(0, ffReader.getNbOfReadFinalFramePackets());
+            assertEquals(1, ffReader.getNbOfDroppedFinalFramePackets());
+        }
     }
 
     @Test
-    public void when_final_frame_has_wrong_footer_should_return_null() {
-        //arrange
-        InputStream is = TestHelper.getFileInputStreamFromResource("final_frame_wrong_footer_sample_one_packet.ff");
-        FinalFrameReader ffReader = new FinalFrameReader();
+    public void when_final_frame_has_wrong_footer_should_return_null() throws IOException {
+        try(InputStream is = TestHelper.getFileInputStreamFromResource("final_frame_wrong_footer_sample_one_packet.ff")) {
+            //arrange
+            FinalFrameReader ffReader = new FinalFrameReader();
 
-        //act
-        byte[] ffPayload = ffReader.read(is);
+            //act
+            byte[] ffPayload = ffReader.read(is);
 
-        //assert
-        assertNull(ffPayload);
-        assertEquals(0, ffReader.getNbOfReadFinalFramePackets());
-        assertEquals(1, ffReader.getNbOfDroppedFinalFramePackets());
+            //assert
+            assertNull(ffPayload);
+            assertEquals(0, ffReader.getNbOfReadFinalFramePackets());
+
+        }
     }
 
     @Test
-    public void when_message_is_correct_should_return_byte_array_with_payload(){
+    public void when_message_is_correct_should_return_byte_array_with_payload() throws IOException {
         //arrange
-        InputStream is = TestHelper.getFileInputStreamFromResource("final_frame_correct_sample_one_packet.ff");
-        FinalFrameReader ffReader = new FinalFrameReader();
+        try(InputStream is = TestHelper.getFileInputStreamFromResource("final_frame_correct_sample_one_packet.ff")) {
+            FinalFrameReader ffReader = new FinalFrameReader();
 
-        //act
-        byte[] ffPayload = ffReader.read(is);
+            //act
+            byte[] ffPayload = ffReader.read(is);
 
-        //assert
-        assertNotNull(ffPayload);
-        assertEquals(70- FinalFrameConstants.FINAL_FRAME_WRAPPING_LENGTH, ffPayload.length);
-        assertEquals(1, ffReader.getNbOfReadFinalFramePackets());
-        assertEquals(0, ffReader.getNbOfDroppedFinalFramePackets());
+            //assert
+            assertNotNull(ffPayload);
+            assertEquals(70 - FinalFrameConstants.FINAL_FRAME_WRAPPING_LENGTH, ffPayload.length);
+            assertEquals(1, ffReader.getNbOfReadFinalFramePackets());
+            assertEquals(0, ffReader.getNbOfDroppedFinalFramePackets());
+        }
     }
 
     @Test
-    public void when_message_is_in_allowed_categories_should_return_payload(){
-        //arrange
-        InputStream isCat62 = TestHelper.getFileInputStreamFromResource("final_frame_correct_sample_one_packet.ff");
-        FinalFrameReader ffReader = new FinalFrameReader();
+    public void when_message_is_in_allowed_categories_should_return_payload() throws IOException {
+        try(InputStream isCat62 = TestHelper.getFileInputStreamFromResource("final_frame_correct_sample_one_packet.ff")) {
+            //arrange
+            FinalFrameReader ffReader = new FinalFrameReader();
 
-        //act
-        byte[] ffPayload = ffReader.read(isCat62,62);
+            //act
+            byte[] ffPayload = ffReader.read(isCat62, 62);
 
-        //assert
-        assertNotNull(ffPayload);
-        assertEquals(70- FinalFrameConstants.FINAL_FRAME_WRAPPING_LENGTH, ffPayload.length);
-        assertEquals(1, ffReader.getNbOfReadFinalFramePackets());
-        assertEquals(0, ffReader.getNbOfDroppedFinalFramePackets());
+            //assert
+            assertNotNull(ffPayload);
+            assertEquals(70 - FinalFrameConstants.FINAL_FRAME_WRAPPING_LENGTH, ffPayload.length);
+            assertEquals(1, ffReader.getNbOfReadFinalFramePackets());
+            assertEquals(0, ffReader.getNbOfDroppedFinalFramePackets());
+        }
     }
 
     @Test
-    public void when_message_is_in_not_allowed_categories_should_return_payload(){
-        //arrange
-        InputStream isCat62 = TestHelper.getFileInputStreamFromResource("final_frame_correct_sample_one_packet.ff");
-        FinalFrameReader ffReader = new FinalFrameReader();
+    public void when_message_is_in_not_allowed_categories_should_return_payload() throws IOException {
+        try(InputStream isCat62 = TestHelper.getFileInputStreamFromResource("final_frame_correct_sample_one_packet.ff")) {
+            //arrange
+            FinalFrameReader ffReader = new FinalFrameReader();
 
-        //act
-        byte[] ffPayload = ffReader.read(isCat62,65);
+            //act
+            byte[] ffPayload = ffReader.read(isCat62, 65);
 
-        //assert
-        assertNull(ffPayload);
-        assertEquals(1, ffReader.getNbOfReadFinalFramePackets());
-        assertEquals(0, ffReader.getNbOfDroppedFinalFramePackets());
+            //assert
+            assertNull(ffPayload);
+            assertEquals(1, ffReader.getNbOfReadFinalFramePackets());
+            assertEquals(0, ffReader.getNbOfDroppedFinalFramePackets());
+        }
     }
 }
